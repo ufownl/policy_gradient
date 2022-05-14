@@ -2,7 +2,6 @@ import random
 import argparse
 import mxnet as mx
 from environment import run
-from distributions import Normal
 from utils import AgentBase
 from pendulum_a2c import Actor, Critic, Test
 
