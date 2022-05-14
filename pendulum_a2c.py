@@ -63,8 +63,8 @@ class Agent(AgentBase):
             g = r if s1 is None else r + self.__gamma * self.__critic(mx.nd.array(s1, ctx=self.__context).expand_dims(0))
             advantage = g - self.__critic(x)
             with mx.autograd.record():
-                p = mx.nd.log(self.__actor(x).probability(y))
-                L = -advantage * p - self.__entropy_weight * p
+                d = self.__actor(x)
+                L = -advantage * mx.nd.log(d.probability(y)) - self.__entropy_weight * d.entropy
                 L.backward()
             self.__actor_trainer.step(1)
             with mx.autograd.record():

@@ -15,6 +15,10 @@ class Normal:
     def standard_deviation(self):
         return self.__std
 
+    @property
+    def entropy(self):
+        return 0.5 + 0.5 * math.log(2 * math.pi) + mx.nd.log(self.__std)
+
     def sample(self):
         return mx.nd.random.normal(self.__mu, self.__std)
 
