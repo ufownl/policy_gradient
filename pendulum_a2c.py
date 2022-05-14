@@ -2,6 +2,7 @@ import argparse
 import mxnet as mx
 from environment import run
 from distributions import Normal
+from utils import AgentBase
 
 
 class Actor(mx.gluon.nn.Block):
@@ -31,32 +32,9 @@ class Critic(mx.gluon.nn.Block):
         return self.__net(x)
 
 
-class AgentBase:
-    def __init__(self, test=False):
-        self.__test = test
-        self.__state_space = None
-        self.__action_space = None
-
-    @property
-    def environment(self):
-        return "Pendulum-v1"
-
-    @property
-    def test(self):
-        return self.__test
-
-    @property
-    def spaces(self):
-        return self.__state_space, self.__action_space
-
-    @spaces.setter
-    def spaces(self, value):
-        self.__state_space, self.__action_space = value
-
-
 class Agent(AgentBase):
     def __init__(self, gamma=0.9, entropy_weight=1e-2, ctx=mx.cpu()):
-        super(Agent, self).__init__()
+        super(Agent, self).__init__("Pendulum-v1")
         self.__actor = Actor()
         self.__actor.initialize(mx.initializer.Xavier(), ctx=ctx)
         self.__actor_trainer = mx.gluon.Trainer(self.__actor.collect_params(), "Nadam", {
@@ -98,7 +76,7 @@ class Agent(AgentBase):
 
 class Test(AgentBase):
     def __init__(self, actor, ctx):
-        super(Test, self).__init__(True)
+        super(Test, self).__init__("Pendulum-v1", True)
         self.__actor = actor
         self.__context = ctx
 
