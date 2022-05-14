@@ -91,7 +91,7 @@ class Test(AgentBase):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Implementation of A2C for Pendulum-v1.")
-    parser.add_argument("--episodes", help="number of training episodes (default: 1000)", type=int, default=1000)
+    parser.add_argument("--episodes", help="number of training episodes (default: 500)", type=int, default=500)
     parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
     parser.add_argument("--gpu", help="using gpu acceleration", action="store_true")
     args = parser.parse_args()
