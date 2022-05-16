@@ -33,7 +33,7 @@ class Critic(mx.gluon.nn.Block):
 
 
 class Agent(AgentBase):
-    def __init__(self, gamma=0.9, entropy_weight=1e-2, ctx=mx.cpu()):
+    def __init__(self, gamma=0.9, entropy_weight=5e-3, ctx=mx.cpu()):
         super(Agent, self).__init__("Pendulum-v1")
         self.__actor = Actor()
         self.__actor.initialize(mx.initializer.Xavier(), ctx=ctx)
