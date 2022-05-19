@@ -56,19 +56,19 @@ class Agent(AgentBase):
     def __call__(self):
         state, _ = yield
         while not state is None:
-            x = mx.nd.array(state, ctx=self.__context).expand_dims(0)
-            y = self.__actor(x).sample()
-            action = y.clip(-2.0, 2.0).asnumpy()[0]
+            s = mx.nd.array(state, ctx=self.__context).expand_dims(0)
+            a = self.__actor(s).sample()
+            action = a.clip(-2.0, 2.0).asnumpy()[0]
             s1, r = yield action
             g = r if s1 is None else r + self.__gamma * self.__critic(mx.nd.array(s1, ctx=self.__context).expand_dims(0))
-            advantage = g - self.__critic(x)
+            advantage = g - self.__critic(s)
             with mx.autograd.record():
-                d = self.__actor(x)
-                L = -advantage * mx.nd.log(d.probability(y)) - self.__entropy_weight * d.entropy
+                d = self.__actor(s)
+                L = -advantage * mx.nd.log(d.probability(a)) - self.__entropy_weight * d.entropy
                 L.backward()
             self.__actor_trainer.step(1)
             with mx.autograd.record():
-                L = mx.nd.smooth_l1(mx.nd.abs(g - self.__critic(x)))
+                L = mx.nd.smooth_l1(mx.nd.abs(g - self.__critic(s)))
                 L.backward()
             self.__critic_trainer.step(1)
             state = s1
@@ -83,8 +83,8 @@ class Test(AgentBase):
     def __call__(self):
         state, _ = yield
         while not state is None:
-            x = mx.nd.array(state, ctx=self.__context).expand_dims(0)
-            action = self.__actor(x).mean.asnumpy()[0]
+            s = mx.nd.array(state, ctx=self.__context).expand_dims(0)
+            action = self.__actor(s).mean.asnumpy()[0]
             s1, _ = yield action
             state = s1
 

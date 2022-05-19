@@ -36,13 +36,13 @@ class Agent(AgentBase):
     def __call__(self):
         state, _ = yield
         while not state is None:
-            x = mx.nd.array(state, ctx=self.__context).expand_dims(0)
-            d = self.__actor(x)
-            y = d.sample()
-            v = self.__critic(x)[0].asscalar()
-            action = y.clip(-2.0, 2.0).asnumpy()[0]
+            s = mx.nd.array(state, ctx=self.__context).expand_dims(0)
+            d = self.__actor(s)
+            a = d.sample()
+            v = self.__critic(s)[0].asscalar()
+            action = a.clip(-2.0, 2.0).asnumpy()[0]
             s1, r = yield action
-            self.__cache.append((x, v, y, mx.nd.log(d.probability(y)), s1, r))
+            self.__cache.append((s, v, a, mx.nd.log(d.probability(a)), s1, r))
             if len(self.__cache) >= self.__rollout_length:
                 self.__estimate_g(s1)
                 self.__update_model()
@@ -59,24 +59,24 @@ class Agent(AgentBase):
             self.__cache[i] += (values[i] + gae,)
 
     def __update_model(self):
-        for x, v, y, p, g in self.__batches():
+        for s, v, a, p, g in self.__batches():
             advantage = g - v
             with mx.autograd.record():
-                d = self.__actor(x)
-                ratio = (mx.nd.log(d.probability(y)) - p).exp()
+                d = self.__actor(s)
+                ratio = (mx.nd.log(d.probability(a)) - p).exp()
                 L = -mx.nd.min(mx.nd.concat(ratio * advantage, ratio.clip(1.0 - self.__epsilon, 1.0 + self.__epsilon) * advantage, dim=1), axis=1, keepdims=True) - self.__entropy_weight * d.entropy
                 L.backward()
             self.__actor_trainer.step(self.__batch_size)
             with mx.autograd.record():
-                L = mx.nd.smooth_l1(mx.nd.abs(g - self.__critic(x)))
+                L = mx.nd.smooth_l1(mx.nd.abs(g - self.__critic(s)))
                 L.backward()
             self.__critic_trainer.step(self.__batch_size)
 
     def __batches(self):
         for _ in range(self.__epochs):
             for _ in range(len(self.__cache) // self.__batch_size):
-                x, v, y, p, _, _, g = zip(*random.sample(self.__cache, k=self.__batch_size))
-                yield mx.nd.concat(*x, dim=0), mx.nd.array(v, ctx=self.__context).expand_dims(1), mx.nd.concat(*y, dim=0), mx.nd.concat(*p, dim=0), mx.nd.array(g, ctx=self.__context).expand_dims(1)
+                s, v, a, p, _, _, g = zip(*random.sample(self.__cache, k=self.__batch_size))
+                yield mx.nd.concat(*s, dim=0), mx.nd.array(v, ctx=self.__context).expand_dims(1), mx.nd.concat(*a, dim=0), mx.nd.concat(*p, dim=0), mx.nd.array(g, ctx=self.__context).expand_dims(1)
 
 
 if __name__ == "__main__":
