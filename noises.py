@@ -14,3 +14,14 @@ class OrnsteinUhlenbeckNoise:
 
     def reset(self):
         self.__state = mx.nd.ones_like(self.__state) * self.__mu
+
+
+class GaussNoise:
+    def __init__(self, shape, mu=0.0, sigma=0.2, ctx=mx.cpu()):
+        self.__shape = shape
+        self.__mu = mu
+        self.__sigma = sigma
+        self.__context = ctx
+
+    def sample(self):
+        return mx.nd.random.normal(self.__mu, self.__sigma, shape=self.__shape, ctx=self.__context)
