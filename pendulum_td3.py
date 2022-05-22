@@ -70,8 +70,7 @@ class Agent(AgentBase):
             trainer.step(self.__batch_size)
         if self.__update_step % self.__delayed_steps == 0:
             with mx.autograd.record():
-                a1 = self.__actor(s)
-                L = -sum(critic(s, a1) for critic in self.__critics)
+                L = -self.__critics[0](s, self.__actor(s))
                 L.backward()
             self.__actor_trainer.step(self.__batch_size)
             self.__soft_update()
