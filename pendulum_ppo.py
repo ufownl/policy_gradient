@@ -63,7 +63,7 @@ class Agent(AgentBase):
             advantage = g - v
             with mx.autograd.record():
                 d = self.__actor(s)
-                ratio = (d.log_prob(a) - p).exp()
+                ratio = mx.nd.exp(d.log_prob(a) - p)
                 L = -mx.nd.min(mx.nd.concat(ratio * advantage, ratio.clip(1.0 - self.__epsilon, 1.0 + self.__epsilon) * advantage, dim=1), axis=1, keepdims=True) - self.__entropy_weight * d.entropy
                 L.backward()
             self.__actor_trainer.step(self.__batch_size)
