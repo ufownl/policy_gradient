@@ -64,7 +64,7 @@ class Agent(AgentBase):
             advantage = g - self.__critic(s)
             with mx.autograd.record():
                 d = self.__actor(s)
-                L = -advantage * mx.nd.log(d.probability(a)) - self.__entropy_weight * d.entropy
+                L = -advantage * d.log_prob(a) - self.__entropy_weight * d.entropy
                 L.backward()
             self.__actor_trainer.step(1)
             with mx.autograd.record():

@@ -42,7 +42,7 @@ class Agent(AgentBase):
             v = self.__critic(s)[0].asscalar()
             action = a.clip(-2.0, 2.0).asnumpy()[0]
             s1, r = yield action
-            self.__cache.append((s, v, a, mx.nd.log(d.probability(a)), s1, r))
+            self.__cache.append((s, v, a, d.log_prob(a), s1, r))
             if len(self.__cache) >= self.__rollout_length:
                 self.__estimate_g(s1)
                 self.__update_model()
@@ -63,7 +63,7 @@ class Agent(AgentBase):
             advantage = g - v
             with mx.autograd.record():
                 d = self.__actor(s)
-                ratio = (mx.nd.log(d.probability(a)) - p).exp()
+                ratio = (d.log_prob(a) - p).exp()
                 L = -mx.nd.min(mx.nd.concat(ratio * advantage, ratio.clip(1.0 - self.__epsilon, 1.0 + self.__epsilon) * advantage, dim=1), axis=1, keepdims=True) - self.__entropy_weight * d.entropy
                 L.backward()
             self.__actor_trainer.step(self.__batch_size)
