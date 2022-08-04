@@ -1,3 +1,4 @@
+import pickle
 import random
 import argparse
 import mxnet as mx
@@ -109,19 +110,29 @@ class Test(AgentBase):
         super(Test, self).__init__("Pendulum-v1", True)
         self.__actor = actor
         self.__context = ctx
+        self.__demo = []
+
+    @property
+    def demo(self):
+        return self.__demo
 
     def __call__(self):
-        state, _ = yield
+        episode = []
+        state, reward = yield
         while not state is None:
             s = mx.nd.array(state, ctx=self.__context).expand_dims(0)
             action = self.__actor(s).asnumpy()[0]
-            s1, _ = yield action
+            episode.append((state, reward, action))
+            s1, reward = yield action
             state = s1
+        episode.append((None, reward, None))
+        self.__demo.append(episode)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Implementation of DDPG for Pendulum-v1.")
     parser.add_argument("--episodes", help="number of training episodes (default: 500)", type=int, default=500)
+    parser.add_argument("--demo", help="file path of demonstrations (default: demo.pkl)", type=str, default="demo.pkl")
     parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
     parser.add_argument("--gpu", help="using gpu acceleration", action="store_true")
     args = parser.parse_args()
@@ -133,5 +144,9 @@ if __name__ == "__main__":
     print("Training...", flush=True)
     run(agent, args.episodes)
     print("Testing...", flush=True)
-    run(agent.test_agent, 5)
+    test = agent.test_agent
+    run(test, 5)
+    print("Dumping...", flush=True)
+    with open(args.demo, "wb") as f:
+        pickle.dump(test.demo, f)
     print("Done!", flush=True)
