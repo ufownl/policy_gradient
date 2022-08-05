@@ -106,6 +106,10 @@ venv.bak/
 # check-point files
 *.state
 
+# pickle data files
+*.pkl
+*.pickle
+
 # output and backup files
 *.out
 *.bak
