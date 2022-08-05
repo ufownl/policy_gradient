@@ -1,4 +1,5 @@
 import math
+import pickle
 import random
 import argparse
 import mxnet as mx
@@ -96,6 +97,7 @@ class Agent(AgentBase):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Implementation of SAC for Pendulum-v1.")
     parser.add_argument("--episodes", help="number of training episodes (default: 500)", type=int, default=500)
+    parser.add_argument("--demo", help="file path of demonstrations (default: demo.pkl)", type=str, default="demo.pkl")
     parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
     parser.add_argument("--gpu", help="using gpu acceleration", action="store_true")
     args = parser.parse_args()
@@ -107,5 +109,9 @@ if __name__ == "__main__":
     print("Training...", flush=True)
     run(agent, args.episodes)
     print("Testing...", flush=True)
-    run(agent.test_agent, 5)
+    test = agent.test_agent
+    run(test, 5)
+    print("Dumping...", flush=True)
+    with open(args.demo, "wb") as f:
+        pickle.dump(test.demo, f)
     print("Done!", flush=True)
