@@ -44,6 +44,7 @@ class Agent(AgentBase):
         return Test(self.__actor, self.__context)
 
     def __call__(self):
+        h = -mx.nd.prod(mx.nd.array(self.spaces[1].shape, ctx=self.__context))
         state, _ = yield
         while not state is None:
             s = mx.nd.array(state, ctx=self.__context).expand_dims(0)
@@ -56,10 +57,10 @@ class Agent(AgentBase):
             s1, r = yield action
             self.__cache.append((s, a, mx.nd.zeros_like(s) if s1 is None else mx.nd.array(s1, ctx=self.__context).expand_dims(0), r, float(not s1 is None)))
             if len(self.__cache) >= self.__batch_size:
-                self.__update_model()
+                self.__update_model(h)
             state = s1
 
-    def __update_model(self):
+    def __update_model(self, h):
         s, a, s1, r, mask = self.__batch()
         alpha = mx.nd.exp(self.__alpha.data(self.__context))
         d1 = self.__actor(s1)
@@ -79,7 +80,7 @@ class Agent(AgentBase):
             L.backward()
         self.__actor_trainer.step(self.__batch_size)
         with mx.autograd.record():
-            L = -mx.nd.exp(self.__alpha.data(self.__context)) * (p0.detach() - mx.nd.prod(mx.nd.array(self.spaces[1].shape, ctx=self.__context)))
+            L = -mx.nd.exp(self.__alpha.data(self.__context)) * (p0.detach() + h)
             L.backward()
         self.__alpha_trainer.step(self.__batch_size)
         self.__soft_update()
